@@ -1,0 +1,14 @@
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: /sw/rh9.4/spack/default/modules/lmod/linux-rhel9-x86_64/Core
+NVIDIA A100-SXM4-40GB
+=== N=10000 ===
+π ≈ 3.141676  |  samples: 100000000  |  time: 1.398s
+π ≈ 3.141797  |  samples: 104857600  |  time: 14.8ms
+=== N=1000000 ===
+π ≈ 3.141676  |  samples: 100000000  |  time: 1.398s
+π ≈ 3.141797  |  samples: 104857600  |  time: 1.7ms
+=== N=100000000 ===
+π ≈ 3.141676  |  samples: 100000000  |  time: 1.398s
+π ≈ 3.141797  |  samples: 104857600  |  time: 1.6ms
+=== N=1000000000 ===
+π ≈ 3.141676  |  samples: 100000000  |  time: 1.398s
+π ≈ 3.141797  |  samples: 104857600  |  time: 1.4ms
