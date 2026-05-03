@@ -1,39 +1,52 @@
-import sys, re
+import sys
 import matplotlib.pyplot as plt
 
-data = {'CPU_PI':{}, 'GPU_PI':{}, 'CPU_OPT':{}, 'GPU_OPT':{}}
-with open(sys.argv[1]) as f:
-    for line in f:
-        m = re.match(r'(CPU_PI|GPU_PI|CPU_OPT|GPU_OPT),s*n=(d+).*time=([d.]+)ms', line)
-        if m:
-            data[m.group(1)][int(m.group(2))] = float(m.group(3))
+cpu_times = []
+gpu_times = []
+ns = []
 
-ns = sorted(data['CPU_PI'].keys())
+with open(sys.argv[1], encoding='utf-8', errors='ignore') as f:
+    lines = f.readlines()
 
-def times(key): return [data[key][n] for n in ns]
-def speedup(cpu, gpu): return [data[cpu][n]/data[gpu][n] for n in ns]
+i = 0
+while i < len(lines):
+    line = lines[i].strip()
+    if line.startswith('=== N='):
+        n = int(line.replace('=== N=','').replace(' ===',''))
+        cpu_line = lines[i+1].strip() if i+1 < len(lines) else ''
+        gpu_line = lines[i+2].strip() if i+2 < len(lines) else ''
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-labels = [f'10^{len(str(n))-1}' for n in ns]
+        # parse CPU time (in seconds)
+        if 'time:' in cpu_line:
+            t = cpu_line.split('time:')[-1].strip().replace('s','')
+            cpu_times.append(float(t) * 1000)  # convert to ms
+            ns.append(n)
+
+        # parse GPU time (in ms)
+        if 'time:' in gpu_line:
+            t = gpu_line.split('time:')[-1].strip().replace('ms','')
+            gpu_times.append(float(t))
+    i += 1
+
+print("ns:", ns)
+print("cpu_times:", cpu_times)
+print("gpu_times:", gpu_times)
+
+speedups = [c/g for c,g in zip(cpu_times, gpu_times)]
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
 ax = axes[0]
-ax.loglog(ns, times('CPU_PI'), 'o-', label='CPU')
-ax.loglog(ns, times('GPU_PI'), 's-', label='GPU (A100)')
+ax.loglog(ns, cpu_times, 'o-', label='CPU')
+ax.loglog(ns, gpu_times, 's-', label='GPU (A100)')
 ax.set_title('Pi estimation — time'); ax.set_ylabel('ms')
 ax.set_xlabel('samples'); ax.legend(); ax.grid(alpha=0.3)
 
 ax = axes[1]
-ax.loglog(ns, times('CPU_OPT'), 'o-', label='CPU')
-ax.loglog(ns, times('GPU_OPT'), 's-', label='GPU (A100)')
-ax.set_title('Option pricing — time')
-ax.set_xlabel('samples'); ax.legend(); ax.grid(alpha=0.3)
-
-ax = axes[2]
-ax.semilogx(ns, speedup('CPU_PI','GPU_PI'),   'o-', label='Pi')
-ax.semilogx(ns, speedup('CPU_OPT','GPU_OPT'), 's-', label='Option')
+ax.semilogx(ns, speedups, 'D-', color='#185FA5')
 ax.set_title('GPU speedup (CPU/GPU)')
 ax.set_xlabel('samples'); ax.set_ylabel('speedup')
-ax.legend(); ax.grid(alpha=0.3)
+ax.grid(alpha=0.3)
 
 plt.tight_layout()
 plt.savefig('results.png', dpi=150)
